@@ -606,6 +606,84 @@ class CombinedDownloaderBot:
                 f"Error details: {str(e)}"
             )
 
+    async def clear_user_downloads(self, user_id: int) -> Tuple[bool, bool]:
+        """
+        Clear active downloads and downloaded files for a specific user only
+        
+        Args:
+            user_id (int): The user ID whose downloads need to be cleared
+            
+        Returns:
+            Tuple[bool, bool]: (had_active_downloads, had_files_to_delete)
+        """
+        try:
+            had_active = False
+            had_files = False
+            
+            # 1. Clear only this user's active downloads
+            if user_id in self.active_downloads:
+                had_active = True
+                if isinstance(self.active_downloads[user_id], asyncio.Task):
+                    try:
+                        self.active_downloads[user_id].cancel()
+                    except Exception as e:
+                        logger.error(f"Error canceling task for user {user_id}: {e}")
+                del self.active_downloads[user_id]
+
+            # 2. Clear only this user's tasks from download_tasks
+            user_tasks = {task for task in self.download_tasks 
+                        if hasattr(task, 'user_id') and task.user_id == user_id}
+            for task in user_tasks:
+                try:
+                    task.cancel()
+                    self.download_tasks.discard(task)
+                except Exception as e:
+                    logger.error(f"Error canceling download task: {e}")
+
+            # 3. Clean up only this user's directory
+            user_dir = self.TEMP_DIR / str(user_id)  # Ensure user-specific directory
+            if user_dir.exists():
+                try:
+                    # Check for any files in this user's directory
+                    file_patterns = [
+                        '*.mp4', '*.mkv', '*.avi', '*.mov',  # Video files
+                        '*.mp3', '*.m4a', '*.wav',           # Audio files
+                        '*.part', '*.temp', '*.download',    # Temporary files
+                        '*.jpg', '*.png', '*.webp',          # Image files
+                        '*.json'                             # Metadata files
+                    ]
+                    
+                    has_files = False
+                    for pattern in file_patterns:
+                        if list(user_dir.glob(pattern)):
+                            has_files = True
+                            break
+                    
+                    if has_files:
+                        had_files = True
+                        # Only remove contents of this user's directory
+                        for item in user_dir.iterdir():
+                            if item.is_file():
+                                item.unlink()
+                            elif item.is_dir():
+                                shutil.rmtree(item)
+                        
+                        # Recreate empty directory for this user
+                        user_dir.mkdir(exist_ok=True)
+                    
+                except Exception as e:
+                    logger.error(f"Error cleaning directory for user {user_id}: {e}")
+
+            # 4. Clear only this user from download tracking
+            if user_id in self.user_download_dirs:
+                del self.user_download_dirs[user_id]
+
+            return had_active, had_files
+
+        except Exception as e:
+            logger.error(f"Error in clear_user_downloads for user {user_id}: {e}")
+            return False, False
+
     async def cleanup(self):
         """Cleanup resources"""
         if self.session:
@@ -2005,6 +2083,39 @@ class CombinedDownloaderBot:
             
             await self.reboot_bot(message)
 
+        @self.app.on_message(filters.command("clear"))
+        async def clear_handler(client, message):
+            """Handle the /clear command to clear only the requesting user's downloads"""
+            if not await self.check_membership(client, message.from_user.id):
+                await self.send_membership_message(message)
+                return
+                
+            user_id = message.from_user.id
+            status_message = await message.reply_text("🔄 Clearing your downloads...")
+            
+            try:
+                had_active, had_files = await self.clear_user_downloads(user_id)
+                
+                if had_active or had_files:
+                    status_text = "✅ Your cleanup completed!\n\n"
+                    if had_active:
+                        status_text += "• Cancelled your active downloads\n"
+                    if had_files:
+                        status_text += "• Removed your downloaded files\n"
+                    status_text += "\nYou can now start new downloads."
+                    
+                    await status_message.edit_text(status_text)
+                else:
+                    await status_message.edit_text(
+                        "ℹ️ You have no active downloads or files to clear."
+                    )
+            except Exception as e:
+                logger.error(f"Error in clear handler for user {user_id}: {e}")
+                await status_message.edit_text(
+                    "❌ An error occurred while clearing your downloads.\n"
+                    "Please try again later or contact support if the issue persists."
+                )
+
         @self.app.on_message(filters.command("broadcast") & filters.user(OWNER_USERNAME))
         async def broadcast_cmd(client, message):
             await self.broadcast_handler(client, message)
@@ -2055,6 +2166,7 @@ class CombinedDownloaderBot:
                         "**▫️ /audio [song name] - Search and download audio by name**\n"
                         "**▫️ Use /spotify <song name> to download music**\n"
                         "**▫️ Use /sptfylist <artist name> for top tracks**\n"
+                        "**▫️ /clear - Clear your active downloads if they're stuck**\n"
                         "**🫥 This Bot Works For Group Too \n**"
                         "**✨ Join our channel for updates and support!**"
                     )
@@ -2104,6 +2216,7 @@ class CombinedDownloaderBot:
                         "**▫️ /audio [song name] - Search and download audio by name**\n"
                         "**▫️ Use /spotify <song name> to download music**\n"
                         "**▫️ Use /sptfylist <artist name> for top tracks**\n"
+                        "**▫️ /clear - Clear your active downloads if they're stuck**\n"
                         "**🫥 This Bot Works For Group Too \n**"
                         "**✨ Join our channel for updates and support!**"
                     )
