@@ -820,23 +820,23 @@ class CombinedDownloaderBot:
 
     async def handle_cookie_upload(self, message: Message):
         """Handle cookie file upload command"""
-        if str(message.from_user.id) != "1949883614" and message.from_user.username != self.OWNER_USERNAME.replace("@", ""):
+        if str(message.from_user.id) != str(OWNER_ID) and message.from_user.username != self.OWNER_USERNAME.replace("@", ""):
             await message.reply_text("⛔️ This command is only for the bot owner.")
             return
-
+        
         if not message.reply_to_message or not message.reply_to_message.document:
             await message.reply_text(
                 "❗️ Please reply to a cookies.txt file with the /addcookie command."
             )
             return
-
+        
         document = message.reply_to_message.document
         if document.file_name != "cookies.txt":
             await message.reply_text(
                 "❌ Invalid file! Please upload a file named 'cookies.txt'"
             )
             return
-
+        
         status_msg = await message.reply_text("⏳ Downloading cookie file...")
         
         try:
@@ -846,7 +846,7 @@ class CombinedDownloaderBot:
             )
             
             await status_msg.edit_text("✅ Cookie file successfully updated!")
-
+        
         except Exception as e:
             logger.error(f"Error updating cookie file: {e}")
             await status_msg.edit_text(
@@ -2110,9 +2110,9 @@ class CombinedDownloaderBot:
 
         @self.app.on_message(filters.command("reboot"))
         async def reboot_handler(client, message):
-            # Check if the user is the owner
+            """Handle bot reboot command"""
             if (message.from_user.username != self.OWNER_USERNAME.replace("@", "") and 
-                str(message.from_user.id) != "1949883614"):  # Your owner ID
+                str(message.from_user.id) != str(OWNER_ID)):
                 await message.reply_text("⛔️ This command is only for the bot owner.")
                 return
             
