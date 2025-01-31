@@ -38,20 +38,21 @@ yt_dlp.utils.bug_reports_message = lambda: ''
 logging.getLogger('yt_dlp').setLevel(logging.CRITICAL)
 
 # Configure your API credentials
-API_ID = ""
-API_HASH = ""
-BOT_TOKEN = ":-h6wBUWYnO_EW4n_tt4"
-LOG_GROUP_ID = -1001806351030  # Replace with your logging group ID
-OWNER_USERNAME = "@Hmm_Smokie"
-OWNER_ID = 1949883614 
-SPOTIFY_CLIENT_ID = ''
-SPOTIFY_CLIENT_SECRET = ''
-GENIUS_TOKEN = ''
-RAPID_API_KEY = ''
-RAPID_API_URL = ""
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+LOG_GROUP_ID = int(os.getenv("LOG_GROUP_ID"))
+OWNER_USERNAME = os.getenv("OWNER_USERNAME")
+OWNER_ID = int(os.getenv("OWNER_ID"))
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+GENIUS_TOKEN = os.getenv("GENIUS_TOKEN")
+RAPID_API_KEY = os.getenv("RAPID_API_KEY")
+RAPID_API_URL = os.getenv("RAPID_API_URL")
+
 
 # MongoDB Configuration
-MONGO_URI = ""
+MONGO_URI = os.getenv("MONGO_URI")
 DB_NAME = "Downloader"
 USERS_COLLECTION = "users"
 MAINTENANCE_COLLECTION = "maintenance"
