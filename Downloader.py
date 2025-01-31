@@ -30,12 +30,15 @@ from youtubesearchpython.__future__ import VideosSearch
 from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram.types import Message, InlineKeyboardMarkup
 from pyrogram.errors import FloodWait, InputUserDeactivated, UserIsBlocked, PeerIdInvalid
+from dotenv import load_dotenv
 
 # Setup logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 yt_dlp.utils.bug_reports_message = lambda: ''
 logging.getLogger('yt_dlp').setLevel(logging.CRITICAL)
+
+load_dotenv()  
 
 # Configure your API credentials
 API_ID = os.getenv("API_ID")
