@@ -1891,7 +1891,7 @@ class CombinedDownloaderBot:
         """Start the bot with all command handlers"""
         # Social media URL pattern
         social_media_pattern = r'(facebook\.com|fb\.watch|(?:www\.)?(twitter|x)\.com/\w+/status/\d+)'
-        instagram_pattern = r'(instagram\.com/(reel/|p/|stories/|s/aGlnaGxpZ2h0).*?)'
+        instagram_pattern = r'(instagram\.com/([^/]+/)?(reel/|p/|stories/|s/aGlnaGxpZ2h0).*?)'
         pinterest_pattern = r'(pinterest\.com/pin/|pin\.it/)'
 
         @self.app.on_message(filters.regex(social_media_pattern))
